@@ -62,30 +62,25 @@ let url = "https://baidu.com";
 class Bd {
   async create(ctx) {
     const cluster = await Cluster.launch(clusterLanuchOptions);
-    console.log("ctx", ctx.request.body);
     const { kws } = ctx.request.body;
     await cluster.task(async ({ page, data: kw }) => {
-      // await page.setUserAgent(
-      //   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36',
-      // )
+      await page.setUserAgent(
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36"
+      );
 
-    
-
-    //   const proxy = await getIp(ips, win);
-    //   if (proxy !== "noProxy") {
-    //     await useProxy(page, `http://${proxy.ip}:${proxy.port}`);
-    //     useProxy.lookup(page).then((data) => {
-    //       console.log("当前使用ip", `当前使用ip-${data.ip}`);
-    //     });
-    //   }
-
+      //   const proxy = await getIp(ips, win);
+      //   if (proxy !== "noProxy") {
+      //     await useProxy(page, `http://${proxy.ip}:${proxy.port}`);
+      //     useProxy.lookup(page).then((data) => {
+      //       console.log("当前使用ip", `当前使用ip-${data.ip}`);
+      //     });
+      //   }
 
       // 随机数下标
       const times = [1000, 2000, 3000, 4000];
       const randomNo = Math.floor(Math.random() * times.length);
       const currentTime = times[randomNo];
       await page.waitForTimeout(currentTime);
-        
 
       try {
         await page.goto(url, { timeout: 15000 });
@@ -98,49 +93,71 @@ class Bd {
       await page.click("#su");
 
       let body = {};
-      try {
-        await page.waitForSelector('#container', { timeout: 10000 })
-        // content_none 判断是否有结果
-        const contentNone = await page.$(".content_none");
+      await page.waitForSelector("#container", { timeout: 10000 });
+      // content_none 判断是否有结果
+      const contentNone = await page.$(".content_none");
 
-        if (!contentNone) {
-          body = await page.evaluate(() => {
-            const titles = [...document.querySelectorAll(".new-pmd .t a")];
-            return {
-              title: titles.map((a) => ({
-                title: a.innerText,
-              })),
-            };
-          });
-          // 有收录结果
-          console.log(`有收录结果`,body)
-        } else {
-          body.title = [];
-          // 没有收录结果
-          console.log(`没有收录结果`)
+      let totalPage = 5
+
+      if (!contentNone) {
+
+        for (let index = 0; index < totalPage; index++) {
+          let p = page.$$('#page a')
+          let cp = p[index]
+
+          body = await page.evaluate((kw) => {
+            const titles = [
+              ...document.querySelectorAll(".result.c-container.new-pmd .t a"),
+            ];
+            const links = [
+              ...document.querySelectorAll(
+                ".result.c-container.new-pmd a.c-showurl"
+              ),
+            ];
+  
+            let result = titles.map((item, index) => {
+              return {
+                kw,
+                index,
+                title: item.innerText,
+                titleLink: item.href,
+                link: links[index] && links[index].innerText,
+              };
+            });
+  
+            return result;
+          }, kw);
+
+          if(p > 0){
+            await cp.click()
+            await page.waitForNavigation()
+          }
+          
         }
-      } catch (error) {
-        console.log("error", error);
-        console.log(`打开网页出错-${url}`)
+
+
+       
+        // 有收录结果
+        console.log(`有收录结果`, body);
+      } else {
+        console.log(`没有收录结果`);
       }
     });
 
     // 队列执行任务
-    console.log('kws',kws);
+    console.log("kws", kws);
     for (const iterator of kws) {
       cluster.queue(iterator);
     }
 
-    // await cluster.idle();
-    // await cluster.close().then((res) => {
-    //   console.log("全部完成,关闭");
-    //   ctx.body = {
-    //       code:0,
-    //       data:'全部完成'
-    //   }
-    // });
-
-   
+    await cluster.idle();
+    await cluster.close().then((res) => {
+      console.log("全部完成,关闭");
+      ctx.body = {
+        code: 0,
+        data: "全部完成",
+      };
+    });
   }
 }
 
