@@ -94,18 +94,14 @@ class Bd {
 
       let body = {};
       await page.waitForSelector("#container", { timeout: 10000 });
-      // content_none 判断是否有结果
-      const contentNone = await page.$(".content_none");
-
+      await page.waitForTimeout(3000)
       let totalPage = 5
-
-      if (!contentNone) {
-
+      console.log(totalPage);
         for (let index = 0; index < totalPage; index++) {
-          let p = page.$$('#page a')
+          let p = await page.$$('#page a')
           let cp = p[index]
-
-          body = await page.evaluate((kw) => {
+          console.log(index);
+          let body = await page.evaluate((kw) => {
             const titles = [
               ...document.querySelectorAll(".result.c-container.new-pmd .t a"),
             ];
@@ -128,7 +124,8 @@ class Bd {
             return result;
           }, kw);
 
-          if(p > 0){
+          if(index > 0){
+            console.log('body',body);
             await cp.click()
             await page.waitForNavigation()
           }
@@ -139,9 +136,7 @@ class Bd {
        
         // 有收录结果
         console.log(`有收录结果`, body);
-      } else {
-        console.log(`没有收录结果`);
-      }
+     
     });
 
     // 队列执行任务
