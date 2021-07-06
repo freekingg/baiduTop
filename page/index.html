@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>抓取百度前5页</title>
+    <link rel="stylesheet" href="./static/main.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <el-card class="card">
+        <el-form
+          class="search-form"
+          :inline="true"
+          label-position="left"
+          ref="searchForm"
+          :model="searchForm"
+          :rules="rules"
+        >
+          <el-form-item prop="kws">
+            <el-input
+              v-model="searchForm.kws"
+              :autosize="{ minRows: 2, maxRows: 5 }"
+              type="textarea"
+              placeholder="请输入查询网址,多网址换行，一行一个"
+              clearable
+            ></el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button @click="submit" type="primary" :loading="loading"
+              >{{ loading ? '查询中' : '查询' }}</el-button
+            >
+          </el-form-item>
+        </el-form>
+
+        <el-alert class="log" :title="log" type="warning" :closable="false">
+        </el-alert>
+        <br />
+        <el-button
+          class="exportExcel"
+          type="primary"
+          @click="exportExcel('out-table')"
+          :disabled="loading"
+          v-if="!loading"
+          >导出全部</el-button
+        >
+
+        <!-- 全部数组的表格 -->
+        <el-table id="out-table" :data="resultData" border style="width: 100%">
+          <el-table-column type="index" width="80"> </el-table-column>
+          <el-table-column prop="url" label="域名" width="180">
+            <template slot-scope="scope">
+              <span>{{ scope.row.url }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="include" label="是否收录" width="180">
+          </el-table-column>
+          <el-table-column prop="title" label="收录标题"> </el-table-column>
+          <el-table-column prop="url" label="检测状态" width="180">
+            <template slot-scope="scope">
+              <el-tag v-if="!scope.row.error" type="danger">成功</el-tag>
+              <el-tag v-else type="danger">检测出错</el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+    </div>
+  </body>
+  <script>
+    var app = new Vue({
+      el: "#app",
+      data() {
+        return {
+          msg: "value",
+          resultData: [],
+          loading: false,
+          searchForm: {
+            kws: "",
+          },
+          rules: {
+            kws: [{ required: true, message: "请输入内容", trigger: "blur" }],
+          },
+          log: "",
+        };
+      },
+      methods: {
+        submit() {
+          this.$refs.searchForm.validate(async (valid) => {
+            if (valid) {
+              this.searchUrlData = [];
+              this.loading = true;
+
+              var oparray = [];
+              var res = this.searchForm.kws;
+              res = res.replace(/^\n*/, "");
+              res = res.replace(/\n{2,}/g, "\n");
+              res = res.replace(/\n*$/, "");
+              oparray = res.split("\n");
+
+              const kws = oparray;
+              this.urlCount = kws.length;
+              console.log("kws", kws);
+
+              let result = await axios({
+                method: "post",
+                url: "http://localhost:3000/bd/",
+                data: { kws },
+              });
+              console.log(result);
+              this.loading = false;
+              return true;
+            }
+            console.log("error submit!!");
+            return false;
+          });
+        },
+      },
+    });
+  </script>
+</html>
