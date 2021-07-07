@@ -57,12 +57,13 @@ const getIp = async (ips) => {
   });
 };
 
-let url = "https://baidu.com";
+let url = "https://www.baidu.com";
 
 class Bd {
   async create(ctx) {
     const cluster = await Cluster.launch(clusterLanuchOptions);
     const { kws } = ctx.request.body;
+    let content = [];
     await cluster.task(async ({ page, data: kw }) => {
       await page.setUserAgent(
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36"
@@ -83,60 +84,60 @@ class Bd {
       await page.waitForTimeout(currentTime);
 
       try {
-        await page.goto(url, { timeout: 15000 });
+        await page.goto(url, { timeout: 30000 });
+        const inputArea = await page.$("#kw");
+        await inputArea.type(`${kw}`, 5000);
+        await page.click("#su");
+
+        await page.waitForSelector("#container", { timeout: 30000 });
+        await page.waitForTimeout(3000);
+
+        let p1Data = await loadContent();
+        console.log("p1Data", p1Data);
+        await page.waitForTimeout(3000);
+
+        for (let index = 1; index <= 5; index++) {
+          console.log("index", index);
+          let pageDoms = await page.$$(
+            "#wrapper_wrapper > #page .page-inner .pc"
+          );
+          await pageDoms[index].click();
+          await page.waitForTimeout(3000);
+
+          let p2Data = await loadContent();
+          content.push(p2Data);
+          console.log(`第${index + 1}页`);
+          await page.waitForTimeout(3000);
+        }
       } catch (error) {
         console.log("打开网页出错", url, error);
       }
 
-      const inputArea = await page.$("#kw");
-      await inputArea.type(`${kw}`, 5000);
-      await page.click("#su");
+      //   获取内容
+      function loadContent(kw) {
+        return page.evaluate((kw) => {
+          const titles = [
+            ...document.querySelectorAll(".result.c-container.new-pmd .t a"),
+          ];
+          const links = [
+            ...document.querySelectorAll(
+              ".result.c-container.new-pmd a.c-showurl"
+            ),
+          ];
 
-      let body = {};
-      await page.waitForSelector("#container", { timeout: 10000 });
-      await page.waitForTimeout(3000)
-      let totalPage = 5
-      console.log(totalPage);
-        for (let index = 0; index < totalPage; index++) {
-          let p = await page.$$('#page a')
-          let cp = p[index]
-          console.log(index);
-          let body = await page.evaluate((kw) => {
-            const titles = [
-              ...document.querySelectorAll(".result.c-container.new-pmd .t a"),
-            ];
-            const links = [
-              ...document.querySelectorAll(
-                ".result.c-container.new-pmd a.c-showurl"
-              ),
-            ];
-  
-            let result = titles.map((item, index) => {
-              return {
-                kw,
-                index,
-                title: item.innerText,
-                titleLink: item.href,
-                link: links[index] && links[index].innerText,
-              };
-            });
-  
-            return result;
-          }, kw);
+          let result = titles.map((item, index) => {
+            return {
+              kw,
+              index,
+              title: item.innerText,
+              titleLink: item.href,
+              link: links[index] && links[index].innerText,
+            };
+          });
 
-          if(index > 0){
-            console.log('body',body);
-            await cp.click()
-            await page.waitForNavigation()
-          }
-          
-        }
-
-
-       
-        // 有收录结果
-        console.log(`有收录结果`, body);
-     
+          return result;
+        }, kw);
+      }
     });
 
     // 队列执行任务
@@ -150,7 +151,7 @@ class Bd {
       console.log("全部完成,关闭");
       ctx.body = {
         code: 0,
-        data: "全部完成",
+        data: content,
       };
     });
   }
