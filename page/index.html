@@ -62,8 +62,8 @@
           <el-table-column label="标题" prop="title"> </el-table-column>
           <el-table-column prop="link" label="底部链接" width="180">
             <template slot-scope="scope">
-              <a target="_blank" :href="'http://'+scope.row.link"
-                >{{ scope.row.link }}</a
+              <a target="_blank" :href="formatUrl(scope.row.link)"
+                >{{ formatUrl(scope.row.link) }}</a
               >
             </template>
           </el-table-column>
@@ -127,8 +127,11 @@
         };
       },
       methods: {
+        formatUrl(link){
+          return `http://${link}`
+        },
         addResData(row) {
-          this.resData.push({ link: row.link });
+          this.resData.push({ link: this.formatUrl(row.link) });
         },
         submit() {
           this.$refs.searchForm.validate(async (valid) => {

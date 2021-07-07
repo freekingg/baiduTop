@@ -16,3 +16,6 @@
   left: 30px;
   top: 100px;
 }
+.el-form-item__content{
+  min-width: 300px;
+}
