@@ -5,3 +5,14 @@
 .exportExcel{
   margin-bottom: 16px !important;
 }
+
+.el-table .cell{
+  word-break: normal !important;
+}
+
+#fixed-table{
+  width: 200px !important;
+  position: fixed;
+  left: 30px;
+  top: 100px;
+}

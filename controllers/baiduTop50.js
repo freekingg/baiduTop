@@ -103,7 +103,7 @@ class Bd {
         await page.waitForTimeout(3000);
 
         // 其它页面遍历抓取
-        for (let index = 1; index < 5; index++) {
+        for (let index = 1; index < 1; index++) {
           console.log("index", index);
           let pageDoms = await page.$$(
             "#wrapper_wrapper > #page .page-inner .pc"
