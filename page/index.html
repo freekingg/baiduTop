@@ -55,21 +55,20 @@
 
         <!-- 全部数组的表格 -->
         <el-table id="out-table" :data="resultData" border style="width: 100%">
-          <el-table-column type="index" width="80"> </el-table-column>
-          <el-table-column prop="url" label="域名" width="180">
+          <el-table-column label="关键字" prop="kw"> </el-table-column>
+          <el-table-column label="所在页码" prop="page" width="80"> </el-table-column>
+          <el-table-column label="标题" prop="title"> </el-table-column>
+          <el-table-column prop="link" label="底部链接" width="180">
             <template slot-scope="scope">
-              <span>{{ scope.row.url }}</span>
+              <a target="_blank">{{ scope.row.link }}</a>
             </template>
           </el-table-column>
-          <el-table-column prop="include" label="是否收录" width="180">
+          <el-table-column prop="titleLink" label="标题链接" width="180">
+            <template slot-scope="scope">
+              <a target="_blank">{{ scope.row.titleLink }}</a>
+            </template>
           </el-table-column>
           <el-table-column prop="title" label="收录标题"> </el-table-column>
-          <el-table-column prop="url" label="检测状态" width="180">
-            <template slot-scope="scope">
-              <el-tag v-if="!scope.row.error" type="danger">成功</el-tag>
-              <el-tag v-else type="danger">检测出错</el-tag>
-            </template>
-          </el-table-column>
         </el-table>
       </el-card>
     </div>
@@ -115,6 +114,14 @@
                 data: { kws },
               });
               console.log(result);
+              let data = result.data.data
+              console.log('data: ', data);
+              let list = []
+              data.map(item=>{
+                list.push(...item)
+              })
+              console.log(list)
+              this.resultData = list
               this.loading = false;
               return true;
             }

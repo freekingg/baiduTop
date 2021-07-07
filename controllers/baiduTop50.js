@@ -2,7 +2,7 @@ const { Invalid, Paging, checkProxy } = require("../common/utils");
 const { Cluster } = require("puppeteer-cluster");
 
 const launchOptions = {
-  headless: false,
+  headless: true,
   ignoreHTTPSErrors: true, // 忽略证书错误
   args: [
     "--disable-gpu",
@@ -23,7 +23,7 @@ const launchOptions = {
 
 const clusterLanuchOptions = {
   concurrency: Cluster.CONCURRENCY_CONTEXT,
-  maxConcurrency: 6, // 并发的workers数
+  maxConcurrency: 7, // 并发的workers数
   retryLimit: 2, // 重试次数
   skipDuplicateUrls: true, // 不爬重复的url
   monitor: false, // 显示性能消耗
@@ -68,6 +68,7 @@ class Bd {
       await page.setUserAgent(
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36"
       );
+      await page.setViewport({'width':1366,'height':768})
 
       //   const proxy = await getIp(ips, win);
       //   if (proxy !== "noProxy") {
@@ -77,11 +78,15 @@ class Bd {
       //     });
       //   }
 
+      function randomTimer(time){
+        const times = time || [1000, 2000, 3000, 4000];
+        const randomNo = Math.floor(Math.random() * times.length);
+        const currentTime = times[randomNo];
+        return currentTime
+      }
+
       // 随机数下标
-      const times = [1000, 2000, 3000, 4000];
-      const randomNo = Math.floor(Math.random() * times.length);
-      const currentTime = times[randomNo];
-      await page.waitForTimeout(currentTime);
+      await page.waitForTimeout(randomTimer());
 
       try {
         await page.goto(url, { timeout: 30000 });
@@ -92,19 +97,23 @@ class Bd {
         await page.waitForSelector("#container", { timeout: 30000 });
         await page.waitForTimeout(3000);
 
-        let p1Data = await loadContent();
-        console.log("p1Data", p1Data);
+        // 第一页直接抓取
+        let p1Data = await loadContent(1);
+        content.push(p1Data);
         await page.waitForTimeout(3000);
 
-        for (let index = 1; index <= 5; index++) {
+        // 其它页面遍历抓取
+        for (let index = 1; index < 5; index++) {
           console.log("index", index);
           let pageDoms = await page.$$(
             "#wrapper_wrapper > #page .page-inner .pc"
           );
-          await pageDoms[index].click();
-          await page.waitForTimeout(3000);
+          const navigationPromise = page.waitForNavigation();
 
-          let p2Data = await loadContent();
+          await pageDoms[index].click();
+          await navigationPromise
+
+          let p2Data = await loadContent(index+1);
           content.push(p2Data);
           console.log(`第${index + 1}页`);
           await page.waitForTimeout(3000);
@@ -114,8 +123,8 @@ class Bd {
       }
 
       //   获取内容
-      function loadContent(kw) {
-        return page.evaluate((kw) => {
+      function loadContent(_index) {
+        return page.evaluate((kw,_index) => {
           const titles = [
             ...document.querySelectorAll(".result.c-container.new-pmd .t a"),
           ];
@@ -127,6 +136,7 @@ class Bd {
 
           let result = titles.map((item, index) => {
             return {
+              page:_index,
               kw,
               index,
               title: item.innerText,
@@ -136,14 +146,14 @@ class Bd {
           });
 
           return result;
-        }, kw);
+        }, kw,_index);
       }
     });
 
     // 队列执行任务
     console.log("kws", kws);
     for (const iterator of kws) {
-      cluster.queue(iterator);
+      await cluster.queue(iterator);
     }
 
     await cluster.idle();
