@@ -1,10 +1,13 @@
 const Router = require("koa-router");
 const router = new Router({
-  prefix: "/bd",
+  prefix: "/shoulu",
 });
-const { create } = require("../controllers/baiduTop50");
+const { create,progress } = require("../controllers/shoulu");
 
 // router.get("/", find);
+
+router.get("/progress", progress);
+
 
 router.post("/", create);
 

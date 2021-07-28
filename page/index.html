@@ -25,9 +25,9 @@
           :model="searchForm"
           :rules="rules"
         >
-          <el-form-item prop="kws">
+          <el-form-item prop="urls">
             <el-input
-              v-model="searchForm.kws"
+              v-model="searchForm.urls"
               :autosize="{ minRows: 2, maxRows: 5 }"
               type="textarea"
               placeholder="请输入查询网址,多网址换行，一行一个"
@@ -109,6 +109,7 @@
     </div>
   </body>
   <script>
+    let timer = null;
     var app = new Vue({
       el: "#app",
       data() {
@@ -118,20 +119,26 @@
           resData: [],
           loading: false,
           searchForm: {
-            kws: "",
+            urls: "",
           },
           rules: {
-            kws: [{ required: true, message: "请输入内容", trigger: "blur" }],
+            urls: [{ required: true, message: "请输入内容", trigger: "blur" }],
           },
           log: "",
         };
       },
       methods: {
-        formatUrl(link){
-          return `http://${link}`
+        formatUrl(link) {
+          return `http://${link}`;
         },
         addResData(row) {
           this.resData.push({ link: this.formatUrl(row.link) });
+        },
+        getProgress() {
+          return axios({
+            method: "get",
+            url: "/shoulu/progress/",
+          });
         },
         submit() {
           this.$refs.searchForm.validate(async (valid) => {
@@ -141,31 +148,48 @@
               this.loading = true;
 
               var oparray = [];
-              var res = this.searchForm.kws;
+              var res = this.searchForm.urls;
               res = res.replace(/^\n*/, "");
               res = res.replace(/\n{2,}/g, "\n");
               res = res.replace(/\n*$/, "");
               oparray = res.split("\n");
 
-              const kws = oparray;
-              this.urlCount = kws.length;
-              console.log("kws", kws);
+              const urls = oparray;
+              this.urlCount = urls.length;
+              console.log("urls", urls);
 
-              let result = await axios({
+              timer = setInterval(() => {
+                this.getProgress().then((result) => {
+                  console.log(result);
+                  this.resultData = result.data.data;
+                  if (!this.loading) {
+                    clearInterval(timer);
+                  }
+                });
+              }, 2000);
+
+              axios({
                 method: "post",
-                url: "http://localhost:3000/bd/",
-                data: { kws },
-              });
-              console.log(result);
-              let data = result.data.data;
-              console.log("data: ", data);
-              let list = [];
-              data.map((item) => {
-                list.push(...item);
-              });
-              console.log(list);
-              this.resultData = list;
-              this.loading = false;
+                url: "/shoulu/",
+                data: { urls },
+              })
+                .then((result) => {
+                  console.log(result);
+                  this.$message({
+                    message: "全部完成",
+                    type: "success",
+                  });
+                  this.loading = false;
+                })
+                .catch((err) => {
+                  this.loading = false;
+                  this.$message({
+                    message: "出错，请刷新重试",
+                    type: "error",
+                  });
+                  clearInterval(timer);
+                });
+
               return true;
             }
             console.log("error submit!!");
@@ -173,7 +197,7 @@
           });
         },
         // 导出表格
-        exportExcel(id,name) {
+        exportExcel(id, name) {
           // if (!this.searchUrlData.length) return
           // 定义导出Excel表格事件
           /* 从表生成工作簿对象 */
