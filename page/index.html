@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>抓取百度前5页</title>
+    <title>收录监控</title>
     <link rel="stylesheet" href="./static/main.css" />
     <link rel="stylesheet" href="./static/css/element.css" />
 
@@ -56,55 +56,9 @@
 
         <!-- 全部数组的表格 -->
         <el-table id="out-table" :data="resultData" border style="width: 100%">
-          <el-table-column label="关键字" prop="kw"> </el-table-column>
-          <el-table-column label="所在页码" prop="page" width="80">
-          </el-table-column>
-          <el-table-column label="标题" prop="title"> </el-table-column>
-          <el-table-column prop="link" label="底部链接" width="180">
-            <template slot-scope="scope">
-              <a target="_blank" :href="formatUrl(scope.row.link)"
-                >{{ formatUrl(scope.row.link) }}</a
-              >
-            </template>
-          </el-table-column>
-          <el-table-column prop="titleLink" label="标题链接" width="180">
-            <template slot-scope="scope">
-              <a target="_blank" :href="scope.row.titleLink"
-                >{{ scope.row.titleLink }}</a
-              >
-            </template>
-          </el-table-column>
-          <el-table-column prop="title" label="收录标题"> </el-table-column>
-          <el-table-column prop="title" label="操作">
-            <template slot-scope="scope">
-              <el-button @click="addResData(scope.row)" type="primary"
-                >加入待下载</el-button
-              >
-            </template>
-          </el-table-column>
+          <el-table-column label="域名" prop="url"> </el-table-column>
+          <el-table-column label="数量" prop="bd_tsl"> </el-table-column>
         </el-table>
-
-        <!-- 需要下载的域名 -->
-        <div id="fixed-table">
-          <el-button
-            class="exportExcel"
-            @click="exportExcel('result-table','选好的域名')"
-            :disabled="loading"
-            v-if="!loading"
-            size="mini"
-            type="warning"
-            >导出</el-button
-          >
-          <el-table
-            id="result-table"
-            :data="resData"
-            border
-            style="width: 100%"
-          >
-            <el-table-column label="挑选好的网站" prop="link">
-            </el-table-column>
-          </el-table>
-        </div>
       </el-card>
     </div>
   </body>
@@ -171,7 +125,7 @@
               axios({
                 method: "post",
                 url: "/shoulu/",
-                data: { urls },
+                data: { urls:this.searchForm.urls },
               })
                 .then((result) => {
                   console.log(result);

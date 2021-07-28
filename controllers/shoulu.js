@@ -2,6 +2,7 @@
 let current = []
 
 const search = require("./search")
+const getCookie = require("./get-resources")
 
 
 class Shoulu {
@@ -10,16 +11,22 @@ class Shoulu {
     const { urls } = ctx.request.body;
     console.log('urls',urls);
 
-    for (const url of urls) {
-      let result =  await search(url)
-      console.log('result: ', result);
-      current.push({url,bd_tsl:result})
+
+    var oparray = [];
+    var res = urls;
+    res = res.replace(/^\n*/, "");
+    res = res.replace(/\n{2,}/g, "\n");
+    res = res.replace(/\n*$/, "");
+    oparray = res.split("\n");
+
+    if(urls){
+
     }
 
     console.log('全部完成了');
     ctx.body = {
       code: 0,
-      data: current,
+      data: '添加成功',
     };
   }
 
