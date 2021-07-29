@@ -32,7 +32,10 @@ const search = async (url,cookie) => {
   if(!r1.bd_tsl){
     r1 = await getOne(url,cookie)
   }
-  console.log('r1',r1);
+  if(!r1.bd_tsl){
+    r1 = await getOne(url,cookie)
+  }
+  console.log('url',r1);
   return r1.bd_tsl || ''
 };
 
